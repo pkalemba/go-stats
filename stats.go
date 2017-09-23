@@ -24,12 +24,8 @@ type Stats struct {
 
 var logger *log.Logger
 
-func (s *Stats) start() {
-	if s.Host && s.Port {
-		statsdclient := statsd.NewStatsdClient(fmt.Sprintf("%s:%d", s.Host, s.Port), s.Prefix)
-	} else {
-		statsdclient := statsd.NewStdoutClient(s.FilePath, s.Prefix)
-	}
+func (s *Stats) Start() {
+	statsdclient := statsd.NewStdoutClient(s.FilePath, s.Prefix)
 	err := statsdclient.CreateSocket()
 	if nil != err {
 		logger.Fatalln("Unable to create socket")
