@@ -1,6 +1,7 @@
 package stats
 
 import (
+	"fmt"
 	"log"
 	"runtime"
 	"time"
@@ -9,23 +10,18 @@ import (
 )
 
 type Stats struct {
-	Host     string //
-	Port     int16  //
-	FilePath string
-
-	Prefix string //
-
-	FlushInterval time.Duration //
-
-	ExportRuntimeData bool //
-
-	Statsd *statsd.StatsdBuffer
+	Host              string        //
+	Port              int16         //
+	Prefix            string        //
+	FlushInterval     time.Duration //
+	ExportRuntimeData bool          //
+	Statsd            *statsd.StatsdBuffer
 }
 
 var logger *log.Logger
 
 func (s *Stats) Start() {
-	statsdclient := statsd.NewStdoutClient(s.FilePath, s.Prefix)
+	statsdclient := statsd.NewStatsdClient(fmt.Sprintf("%s:%d", s.Host, s.Port), s.Prefix)
 	err := statsdclient.CreateSocket()
 	if nil != err {
 		logger.Fatalln("Unable to create socket")
@@ -33,14 +29,14 @@ func (s *Stats) Start() {
 	stats := statsd.NewStatsdBuffer(s.FlushInterval*time.Second, statsdclient)
 	s.Statsd = stats
 	if s.ExportRuntimeData {
-		go s.runtime_stats(statsdclient, s.FlushInterval)
+		go s.runtimeStats(statsdclient, s.FlushInterval)
 	}
 }
 
 func (s *Stats) track(start time.Time, name string) {
 	s.Statsd.PrecisionTiming(name, time.Since(start))
 }
-func (s *Stats) runtime_stats(statsd *statsd.StdoutClient, interval time.Duration) {
+func (s *Stats) runtimeStats(statsd *statsd.StatsdClient, interval time.Duration) {
 	for {
 		<-time.After(interval * time.Second)
 		var mem runtime.MemStats
